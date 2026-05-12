@@ -2,8 +2,29 @@
 
 A Go example demonstrating the pipeline:
 
-```
-Blob upload -> Storage account -> Event Grid system topic -> Event Hub
+```mermaid
+flowchart TD
+    User([You / az CLI]):::actor
+    Blob[("Blob container<br/><i>uploads</i>")]:::azure
+    SA["Storage account<br/><sub>emits BlobCreated</sub>"]:::azure
+    EG["Event Grid<br/>system topic"]:::azure
+    Sub["Event subscription<br/><sub>filter: /containers/uploads/</sub>"]:::azure
+    EH["Event Hub<br/><i>notifications</i>"]:::azure
+    Consumer["cmd/consumer<br/><sub>azeventhubs/v2</sub>"]:::app
+    Stdout>"File &lt;name&gt; has arrived,<br/>starting work with file"]:::output
+
+    User -- "az storage blob upload<br/>(AAD, --auth-mode login)" --> Blob
+    Blob --> SA
+    SA -- "Microsoft.Storage.BlobCreated" --> EG
+    EG --> Sub
+    Sub -- "managed identity<br/>(Data Sender role)" --> EH
+    EH -- "AMQP receive<br/>(Data Receiver role)" --> Consumer
+    Consumer -- "fmt.Printf to stdout" --> Stdout
+
+    classDef azure fill:#0a2540,stroke:#3b82f6,color:#e6f0ff;
+    classDef app fill:#0f3d2e,stroke:#34d399,color:#e6fff4;
+    classDef actor fill:#3a2a0a,stroke:#f59e0b,color:#fff4e0;
+    classDef output fill:#2a0a3a,stroke:#a78bfa,color:#f0e6ff;
 ```
 
 A file dropped into a blob container triggers an Event Grid `BlobCreated`

@@ -82,8 +82,10 @@ call comes back empty, wait a minute and re-run.
 ### 3a. Event Grid delivered the event
 
 ```bash
-SYS_TOPIC=$(az eventgrid system-topic list -g "$RG" --query "[0].name" -o tsv)
-TOPIC_ID=$(az eventgrid system-topic show -g "$RG" -n "$SYS_TOPIC" --query id -o tsv)
+SYS_TOPIC=$(az resource list -g "$RG" \
+  --resource-type Microsoft.EventGrid/systemTopics \
+  --query "[0].name" -o tsv)
+TOPIC_ID="/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.EventGrid/systemTopics/$SYS_TOPIC"
 
 az monitor metrics list \
   --resource "$TOPIC_ID" \
@@ -91,6 +93,9 @@ az monitor metrics list \
   --interval PT1M \
   --query "value[].{name:name.value, points:timeseries[0].data[?total>\`0\`].[timeStamp,total]}"
 ```
+
+(We avoid `az eventgrid system-topic` here because the built-in CLI module
+pins a retired ARM API version — `az resource list` uses a current one.)
 
 A non-empty `DeliverySuccessCount` series is the proof that Event Grid
 handed the event off to the Event Hub.
@@ -109,13 +114,19 @@ Topic* resource). On the topic:
 
 ### 3b. The Event Hub received it
 
+EventHub metrics are emitted at the **namespace** level, not per hub —
+there's no `Microsoft.EventHub/namespaces/eventhubs` metric resource.
+We point the query at the namespace and use `EntityName` to scope it
+to a single hub:
+
 ```bash
-HUB_ID="/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.EventHub/namespaces/$NS/eventhubs/$HUB"
+NS_ID="/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.EventHub/namespaces/$NS"
 
 az monitor metrics list \
-  --resource "$HUB_ID" \
+  --resource "$NS_ID" \
   --metric "IncomingMessages,IncomingBytes" \
   --interval PT1M \
+  --filter "EntityName eq '$HUB'" \
   --query "value[].{name:name.value, points:timeseries[0].data[?total>\`0\`].[timeStamp,total]}"
 ```
 
