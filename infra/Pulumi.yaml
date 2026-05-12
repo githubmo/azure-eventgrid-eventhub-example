@@ -1,0 +1,3 @@
+name: azure-eventgrid-eventhub-example
+runtime: go
+description: Azure infrastructure for the blob -> Event Grid -> Event Hub example

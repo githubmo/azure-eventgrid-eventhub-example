@@ -1,0 +1,22 @@
+# Go
+*.test
+*.out
+/vendor/
+/infra/infra
+
+# Pulumi
+infra/Pulumi.*.yaml.bak
+infra/.pulumi/
+
+# Local secrets / env
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
