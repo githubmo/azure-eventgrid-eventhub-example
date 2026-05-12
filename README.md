@@ -32,6 +32,12 @@ event, which Event Grid forwards to an Event Hub. The Go consumer in
 `cmd/consumer/` reads events from the hub and prints a one-line notice
 for every blob that arrives.
 
+NOTE: We don't need to use Event Hub for this example,
+there are [other event subscriptions including webooks and 
+Azure Funcitons.](https://learn.microsoft.com/en-us/azure/iot-hub/iot-hub-event-grid)
+
+![img.png](eventgrid.png)
+
 ## Layout
 
 ```
